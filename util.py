@@ -16,6 +16,7 @@ import subprocess
 import wandb
 import pandas as pd
 from glob import glob
+from monai.transforms import Resize
 
 import SimpleITK as sitk
 def make_ADC_of_AMC(patient_dir):
@@ -642,3 +643,66 @@ def check_geometry(nifti1_path, nifti2_path):
         return True
     else:
         return False
+
+
+def plot_all_resized(study_dir, modals, masks, mask_color_map):
+    HW = (256, 256)#, 154) # desired image sized showing on the tensorboard
+    resize = Resize(HW, anti_aliasing=True)
+
+    # alpha = 0.5
+    array=None
+    mask = None
+    for m, c in zip(masks, mask_color_map):
+        img = ants.image_read(os.path.join(study_dir, m)).numpy().astype(np.uint8) # HWN
+        img = np.transpose(img, (2, 0, 1)) # (N H W)
+        img = resize(img) # (N H W)
+        img = np.transpose(img, (1, 2, 0)) # HWN
+        img = np.repeat(img[..., np.newaxis], 3, -1) # HWN3 
+        img = img*c
+        img = np.transpose(img, (2, 3, 0, 1)) # (N 3 H W)
+        img = list(img) # img.flatten() # (3 H W) list
+        img = np.concatenate(img, axis=-1) # (3 H W*N)
+        if mask is None:
+            mask = img.copy()
+        else:
+            mask = mask+img.copy()
+            mask = np.clip(mask, 0, 255)
+
+    for m in modals:
+        img = ants.image_read(os.path.join(study_dir, f'{m}.nii.gz')).numpy()
+        lower_bound = np.percentile(img, 0.1)
+        upper_bound = np.percentile(img, 99.9)
+        img = np.clip(img, lower_bound, upper_bound)  # 범위 제한
+        img = (img - lower_bound) / (upper_bound - lower_bound)  # 정규화
+        img = img*255
+        # img = np.clip(img*bright_factor[m], 0, 255)
+        img = np.clip(img, 0, 255) # HWN
+        img = np.transpose(img, (2, 0, 1)) # (N H W)
+        img = resize(img) # (N H W)
+        img = np.transpose(img, (1, 2, 0)) # HWN
+        img = np.repeat(img[..., np.newaxis], 3, -1) # HWN3 
+        img = np.transpose(img, (2, 3, 0, 1)) # (N 3 H W)
+        img = list(img) # img.flatten() # (3 H W) list
+        img = np.concatenate(img, axis=-1) # (3 H W*N)
+        if array is None:
+            # # array = img[:]
+            # array = mask*alpha + img[:]*(1-alpha)
+            # array = np.clip(array*(1/alpha), 0, 255)
+            array = img.copy()
+            array[mask > 0] = mask[mask > 0] 
+            array = np.concatenate((img.copy(), array), axis=-2)
+        else:
+            # # array = np.concatenate((img[:], array), axis=-2) # concat images along H axis
+            # masked = mask*alpha + img[:]*(1-alpha)
+            # masked = np.clip(masked*(1/alpha), 0, 255)
+            masked = img.copy()
+            masked[mask > 0] = mask[mask > 0] 
+            array = np.concatenate((array, img.copy()), axis=-2) # concat images along H axis
+            array = np.concatenate((array, masked), axis=-2) # concat images along H axis
+    array = np.transpose(array, (1, 2, 0)).astype(np.uint8) # (HW3)
+
+    # zero_slices = np.where(np.all(img == 0, axis=(1, 2, 3)))[0]
+    
+    name = study_dir.split('/')[-2:]
+    wandb.log({'/'.join(name): wandb.Image(array)})
+
