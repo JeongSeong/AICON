@@ -1,13 +1,18 @@
 '''
-conda create --name py385 python=3.8.5
-파이토치 설치. fsl, freesurfer, dcm2niix가 깔려있어야 함
+fsl, freesurfer, dcm2niix가 깔려있어야 함
+rapidsai installtion 을 검색하여 additional package에 pytorch, plotly dash, jupyter lab 을 추가선택하여 가상환경을 만들자. 맨 마지막줄은 내가 필요한거 추가한것.
+Ex) conda create -n GBM -c rapidsai -c conda-forge -c nvidia  \
+    rapids=24.10 python=3.11 'cuda-version>=12.0,<=12.5' \
+    jupyterlab 'pytorch=*=*cuda*' dash \
+    tensorboard monai feature_engine wandb moviepy lifelines pyclustering trimesh intensity-normalization
+
+conda activate GBM
 pip install nnunet
 pip install hd_glio  
-conda install -c rapidsai -c nvidia -c conda-forge cudf cuml
 pip install umap-learn[plot]
 conda install jupyter openpyxl
-pip install moviepy antspyx pyradiomics wandb lifelines pyclustering trimesh
-conda install -c conda-forge tensorboard monai
+pip install antspyx pyradiomics mrmr_selection
+
 '''
 import os
 import ants
