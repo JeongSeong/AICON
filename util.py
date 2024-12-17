@@ -604,6 +604,11 @@ def normalize(patient_dir, target_root, subdir):
     ce_mask = ants.image_read(os.path.join(patient_dir, 'CE_tumor_mask.nii.gz'))
     ne_mask = ants.image_read(os.path.join(patient_dir, 'NE_tumor_mask.nii.gz'))
     wt_mask = ants.image_read(os.path.join(patient_dir, 'WT_tumor_mask.nii.gz'))
+
+    ce_array = ce_mask.numpy()
+    ne_array = ne_mask.numpy()
+    wt_array = wt_mask.numpy()
+
     for m in modals:
         try:
             img = ants.image_read(os.path.join(patient_dir, f'{m}_bet.nii.gz'))
@@ -621,12 +626,10 @@ def normalize(patient_dir, target_root, subdir):
             rad.to_file(os.path.join(target_dir, f'{m}_rad.nii.gz'))
 
             # rCBV나 Ktrans는 빈 복셀이 많다. 이걸로 multiparametric 분석을 하려면 mask에서 시퀀스가 비어있지 않은 복셀만을 남기는게 좋겠다. 
-            ce_array = ce_mask.numpy()
             ce_array = np.where((ce_array>0)&(array>0), ce_array, 0)
-            ne_array = ne_mask.numpy()
             ne_array = np.where((ne_array>0)&(array>0), ne_array, 0)
-            wt_array = wt_mask.numpy()
             wt_array = np.where((wt_array>0)&(array>0), wt_array, 0)
+            
         except Exception as e:
             print(e) 
     os.system(f'cp -v {patient_dir}/CE_tumor_mask.nii.gz {target_dir}/CE_tumor_mask.nii.gz')
@@ -638,7 +641,6 @@ def normalize(patient_dir, target_root, subdir):
     ce_array.to_file(os.path.join(target_dir, 'CE_tumor_mask_multi.nii.gz'))
     ne_array.to_file(os.path.join(target_dir, 'NE_tumor_mask_multi.nii.gz'))
     wt_array.to_file(os.path.join(target_dir, 'WT_tumor_mask_multi.nii.gz'))
-
 
 
 def check_geometry(nifti1_path, nifti2_path):
