@@ -11,7 +11,7 @@ pip install nnunet
 pip install hd_glio  
 pip install umap-learn[plot]
 conda install jupyter openpyxl
-pip install antspyx pyradiomics mrmr_selection
+pip install antspyx pyradiomics mrmr_selection torchio
 
 '''
 import os
