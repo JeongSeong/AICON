@@ -4,7 +4,7 @@ rapidsai installtion 을 검색하여 additional package에 pytorch, plotly dash
 Ex) conda create -n GBM -c rapidsai -c conda-forge -c nvidia  \
     rapids=24.10 python=3.11 'cuda-version>=12.0,<=12.5' \
     jupyterlab 'pytorch=*=*cuda*' dash \
-    tensorboard monai feature_engine wandb moviepy lifelines pyclustering trimesh intensity-normalization
+    tensorboard monai feature_engine wandb moviepy lifelines pyclustering trimesh intensity-normalization shap
 
 conda activate GBM
 pip install nnunet
