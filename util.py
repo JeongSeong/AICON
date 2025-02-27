@@ -486,7 +486,7 @@ def volume_ml_csv(target_root, subdir:bool): # 맨 마지막 슬래쉬 빼고 �
             print(e)
             wt=None
 
-        return pd.DataFrame({'study_path':patient_dir, 'et_volme_ml': et, 'ne_volume_ml': ne, 'wt_volume_ml':wt}, index=[0])
+        return pd.DataFrame({'study_path':patient_dir, 'et_volume_ml': et, 'ne_volume_ml': ne, 'wt_volume_ml':wt}, index=[0])
 
     if subdir:
         study_dir = glob(f'{target_root}/*/*')
@@ -613,13 +613,14 @@ def normalize(patient_dir, target_root, subdir):
         try:
             img = ants.image_read(os.path.join(patient_dir, f'{m}_bet.nii.gz'))
             array = img.numpy()
+            array = np.clip(array, a_min=0, a_max=None)
             normal_white_matter = array[nwm_mask==1]
             normal_white_matter = normal_white_matter[normal_white_matter>0]
             # mean = np.mean(normal_white_matter)
             mean = np.median(normal_white_matter)
             vox = array / mean
             # https://github.com/AIM-Harvard/pyradiomics/issues/401#issuecomment-411103540
-            rad = (array-mean) / np.std(normal_white_matter) * 100 
+            rad = (array-mean) / np.std(array[array>0]) * 100 
             vox = ants.from_numpy(vox, origin=img.origin, spacing=img.spacing, direction=img.direction)
             rad = ants.from_numpy(rad, origin=img.origin, spacing=img.spacing, direction=img.direction)
             vox.to_file(os.path.join(target_dir, f'{m}_vox.nii.gz'))
